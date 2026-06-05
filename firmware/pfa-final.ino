@@ -1,5 +1,4 @@
-// 🔥 BLOOMY - ESP32 + Firebase HTTP REST API
-// ✅ LCD: Welcome to Bloomy + Temp + Hum + Sol
+//  BLOOMY - ESP32 + Firebase HTTP REST API
 
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -9,11 +8,11 @@
 #include <LiquidCrystal_I2C.h>
 #include <ESP32Servo.h>
 
-// ==================== 📡 WIFI ====================
+// WIFI 
 #define WIFI_SSID "OPPO A92"
 #define WIFI_PASSWORD "asma462005"
 
-// ==================== 🔥 FIREBASE ====================
+//  FIREBASE 
 #define FIREBASE_PROJECT_ID "bloomy-serre-connectee"
 #define API_KEY "AIzaSyAZbvfoH5t9RQVX7RAqrypXDfrcWcPHKoo"
 #define DEVICE_ID "esp32_serre_01"
@@ -22,7 +21,7 @@
 #define SENSORS_URL "https://firestore.googleapis.com/v1/projects/" FIREBASE_PROJECT_ID "/databases/(default)/documents/sensors/" DEVICE_ID
 #define ACTUATORS_URL "https://firestore.googleapis.com/v1/projects/" FIREBASE_PROJECT_ID "/databases/(default)/documents/actuators/" DEVICE_ID
 
-// ==================== 📌 PINS ====================
+// PINS 
 #define DHTPIN 4
 #define DHTTYPE DHT11
 #define RELAY_PUMP 23
@@ -31,16 +30,16 @@
 #define SOIL_PIN 34
 #define SERVO_PIN 18
 
-// ==================== ⚙️ LIMITES ====================
+//  LIMITES 
 #define TEMP_LIMIT 30.0
 #define SOIL_LIMIT 3000
 
-// ==================== 🧩 OBJECTS ====================
+//  OBJECTS 
 DHT dht(DHTPIN, DHTTYPE);
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 Servo doorServo;
 
-// ==================== 📊 VARIABLES ====================
+// VARIABLES 
 float temperature = 0;
 float humidity = 0;
 int soilMoisture = 0;
@@ -51,7 +50,7 @@ bool fanActive = false;
 bool ledActive = false;
 bool doorOpen = false;
 
-// ==================== ⏱️ TIMERS ====================
+// TIMERS 
 unsigned long lastSensorRead = 0;
 unsigned long lastFirebaseSend = 0;
 unsigned long lastFirebaseRead = 0;
@@ -59,11 +58,11 @@ unsigned long lastLcdUpdate = 0;
 
 bool wifiConnected = false;
 
-// ==================== 🔧 FONCTIONS ====================
+//  FONCTIONS 
 
 // Connexion WiFi
 void connectWiFi() {
-  Serial.print("📡 Connexion WiFi");
+  Serial.print("Connexion WiFi");
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   
   int attempts = 0;
@@ -74,12 +73,12 @@ void connectWiFi() {
   }
   
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\n✅ WiFi connecté!");
+    Serial.println("\n WiFi connecté!");
     Serial.print("   IP: ");
     Serial.println(WiFi.localIP());
     wifiConnected = true;
   } else {
-    Serial.println("\n❌ WiFi ÉCHEC!");
+    Serial.println("\n WiFi ÉCHEC!");
     wifiConnected = false;
   }
 }
@@ -92,7 +91,7 @@ void controlRelay(int pin, bool activate, const char* name) {
 
 // Ouvrir la porte (servo)
 void openDoor() {
-  Serial.println("   🚪 Ouverture porte...");
+  Serial.println("  Ouverture porte ");
   doorServo.attach(SERVO_PIN);
   doorServo.write(90);
   delay(1500);
@@ -120,11 +119,11 @@ void readSensors() {
   controlRelay(RELAY_PUMP, pumpActive, "Pompe");
   digitalWrite(LED_PIN, ledActive ? HIGH : LOW);
   
-  Serial.printf("📊 Capteurs → T: %.1f°C | H: %.1f%% | Sol: %d\n", 
+  Serial.printf(" Capteurs → T: %.1f°C | H: %.1f%% | Sol: %d\n", 
                 temperature, humidity, soilMoisture);
 }
 
-// 🔥 ENVOYER données à Firebase via HTTP PATCH
+//  ENVOYER données à Firebase via HTTP PATCH
 void sendToFirebase() {
   if (!wifiConnected) return;
   
@@ -150,19 +149,19 @@ void sendToFirebase() {
   String jsonBuffer;
   serializeJson(doc, jsonBuffer);
   
-  Serial.print("📤 Envoi Firebase... ");
+  Serial.print(" Envoi Firebase... ");
   int httpCode = http.PATCH(jsonBuffer);
   
   if (httpCode > 0) {
-    Serial.printf("✅ HTTP %d\n", httpCode);
+    Serial.printf(" HTTP %d\n", httpCode);
   } else {
-    Serial.printf("❌ Erreur HTTP: %d\n", httpCode);
+    Serial.printf(" Erreur HTTP: %d\n", httpCode);
   }
   
   http.end();
 }
 
-// 🔥 LIRE commandes depuis Firebase via HTTP GET
+//  LIRE commandes depuis Firebase via HTTP GET
 void readFromFirebase() {
   if (!wifiConnected) return;
   
@@ -170,7 +169,7 @@ void readFromFirebase() {
   String url = String(ACTUATORS_URL) + "?key=" + String(API_KEY);
   
   http.begin(url);
-  Serial.print("📥 Lecture Firebase... ");
+  Serial.print(" Lecture Firebase ");
   
   int httpCode = http.GET();
   
@@ -214,39 +213,39 @@ void readFromFirebase() {
         }
       }
       
-      Serial.println("✅ Commandes lues");
+      Serial.println(" Commandes lues");
     } else {
-      Serial.printf("❌ JSON Error: %s\n", error.c_str());
+      Serial.printf(" JSON Error: %s\n", error.c_str());
     }
   } else if (httpCode == 404) {
-    Serial.println("⚠️ Document non trouvé");
+    Serial.println(" Document non trouvé");
   } else {
-    Serial.printf("❌ HTTP Error: %d\n", httpCode);
+    Serial.printf(" HTTP Error: %d\n", httpCode);
   }
   
   http.end();
 }
 
-// ✅ 🖥️ METTRE À JOUR LCD - TOUJOURS "Welcome to Bloomy" + Capteurs
+//  METTRE À JOUR LCD - affichage:  "Welcome to Bloomy" + Capteurs
 void updateLCD() {
-  // ========== LIGNE 1 : TOUJOURS "Welcome to Bloomy" ==========
-  // 16 caractères max → "Welcome 2 Bloomy" (15 chars)
+  //  LIGNE 1 : TOUJOURS "Welcome to Bloomy" 
+ 
   lcd.setCursor(0, 0);
-  lcd.print("Welcome 2 Bloomy");  // ← FIXE, ne change jamais
+  lcd.print("Welcome to Bloomy");  
   
-  // ========== LIGNE 2 : CAPTEURS (T, H, Sol) ==========
-  // Format: "T:24.5 H:58% S:1850" (16 chars max)
+  //  LIGNE 2 : CAPTEURS (T, H, Sol) 
+  // Format: "T:24.5 H:58% S:1850" 
   lcd.setCursor(0, 1);
   
-  // Température (5 chars: "T:24.5")
+  // Température 
   lcd.print("T:");
   if (isnan(temperature)) {
     lcd.print("--.-");
   } else {
-    lcd.print(temperature, 1);  // 1 décimale
+    lcd.print(temperature, 1);  
   }
   
-  // Humidité Air (5 chars: " H:58%")
+  // Humidité Air 
   lcd.print(" H:");
   if (isnan(humidity)) {
     lcd.print("--");
@@ -273,11 +272,11 @@ void updateLCD() {
   Serial.printf("🖥️ LCD: T=%.1f°C H=%.1f%% Sol=%d\n", temperature, humidity, soilMoisture);
 }
 
-// ==================== 🚀 SETUP ====================
+// SETUP
 void setup() {
   Serial.begin(115200);
-  Serial.println("\n🌿 BLOOMY - ESP32 (LCD Welcome)");
-  Serial.println("══════════════════════════════");
+  Serial.println("\n BLOOMY - ESP32 (LCD Welcome)");
+ 
   
   // WiFi
   connectWiFi();
@@ -314,46 +313,46 @@ void setup() {
   // Status initial
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Welcome 2 Bloomy");  // ← Ligne 1 fixe
+  lcd.print("Welcome 2 Bloomy");  
   lcd.setCursor(0, 1);
-  lcd.print("Init...");
+  lcd.print("Init");
   delay(1000);
   
-  Serial.println("✅ Setup terminé");
-  Serial.println("══════════════════════════════\n");
+  Serial.println("Setup terminé");
+  Serial.println("\n");
 }
 
-// ==================== 🔄 LOOP ====================
+//  LOOP 
 void loop() {
   unsigned long now = millis();
   
-  // 📡 Reconnecter WiFi si perdu
+  //  Reconnecter WiFi si perdu
   if (wifiConnected && WiFi.status() != WL_CONNECTED) {
-    Serial.println("⚠️ WiFi perdu - Reconnexion...");
+    Serial.println(" WiFi perdu , Reconnexion..");
     wifiConnected = false;
     delay(2000);
     connectWiFi();
   }
   
-  // 🌡️ Lire capteurs toutes les 3s
+  //  Lire capteurs toutes les 3s
   if (now - lastSensorRead >= 3000) {
     lastSensorRead = now;
     readSensors();
   }
   
-  // 📤 Envoyer à Firebase toutes les 5s
+  //  Envoyer à Firebase toutes les 5s
   if (now - lastFirebaseSend >= 5000 && wifiConnected) {
     lastFirebaseSend = now;
     sendToFirebase();
   }
   
-  // 📥 Lire commandes Firebase toutes les 2s
+  //  Lire commandes Firebase toutes les 2s
   if (now - lastFirebaseRead >= 2000 && wifiConnected) {
     lastFirebaseRead = now;
     readFromFirebase();
   }
   
-  // 🖥️ Mettre à jour LCD toutes les 2s
+  //  Mettre à jour LCD toutes les 2s
   if (now - lastLcdUpdate >= 2000) {
     lastLcdUpdate = now;
     updateLCD();
