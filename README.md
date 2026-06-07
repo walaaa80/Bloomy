@@ -1,4 +1,4 @@
-# 🌱 Bloomy — Serre Connectée Intelligente
+# 🌱 Bloomy : Serre Connectée Intelligente
 
 > **Gérez votre serre intelligente en toute simplicité.**
 
